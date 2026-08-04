@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>ลงทะเบียน Line | CMRU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  :root{
+    --bg: #F6F1E9;
+    --surface: #FFFFFF;
+    --maroon: #7A2434;
+    --maroon-dark: #5C1B27;
+    --gold: #C9A24B;
+    --text: #2B241F;
+    --muted: #8B7F72;
+    --success: #2F7A4F;
+    --success-bg: #EAF4EE;
+    --error: #B3261E;
+    --error-bg: #FBEAEA;
+    --line-green: #06C755;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans Thai', sans-serif;
+    min-height: 100vh;
+    display:flex;
+    justify-content:center;
+    padding: 28px 16px 48px;
+  }
+  .page{ width:100%; max-width: 420px; }
+
+  .letterhead{
+    text-align:center;
+    margin-bottom: 18px;
+  }
+  .letterhead .eyebrow{
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .letterhead h1{
+    font-family: 'Noto Serif Thai', serif;
+    font-weight: 700;
+    font-size: 22px;
+    margin: 6px 0 12px;
+    color: var(--maroon-dark);
+  }
+  .rule{
+    height: 3px;
+    width: 64px;
+    margin: 0 auto;
+    background: linear-gradient(90deg, var(--gold), var(--maroon));
+    border-radius: 2px;
+  }
+
+  .card{
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 22px 20px;
+    box-shadow: 0 10px 30px rgba(122,36,52,0.08);
+    border: 1px solid rgba(122,36,52,0.08);
+  }
+
+  /* ---- loading state ---- */
+  .loading{
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    padding: 28px 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .spinner{
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 3px solid rgba(122,36,52,0.15);
+    border-top-color: var(--maroon);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  /* ---- profile chip ---- */
+  .profile{
+    display:flex; align-items:center; gap:12px;
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 18px;
+  }
+  .profile img{
+    width: 44px; height: 44px; border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 2px var(--line-green);
+  }
+  .profile .who{ display:flex; flex-direction:column; min-width:0; }
+  .profile .name{ font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .profile .tag{ font-size:11px; color: var(--muted); }
+
+  /* ---- form ---- */
+  label{
+    display:block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--maroon-dark);
+  }
+  .hint{
+    font-size: 12px;
+    color: var(--muted);
+    margin: -4px 0 10px;
+  }
+  input[type="email"]{
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1.5px solid #E4DCCF;
+    font-family: inherit;
+    font-size: 15px;
+    background: #FCFAF6;
+    color: var(--text);
+    transition: border-color 0.15s ease;
+  }
+  input[type="email"]:focus{
+    outline: none;
+    border-color: var(--maroon);
+    background: var(--surface);
+  }
+  input.invalid{ border-color: var(--error); }
+
+  .field-error{
+    font-size: 12px;
+    color: var(--error);
+    margin-top: 6px;
+    min-height: 16px;
+  }
+
+  button.submit{
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: var(--maroon);
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+  button.submit:active{ transform: scale(0.98); }
+  button.submit:disabled{ background: #C7A6AC; cursor: default; }
+
+  /* ---- banners ---- */
+  .banner{
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .banner.error{ background: var(--error-bg); color: var(--error); }
+  .banner.success{ background: var(--success-bg); color: var(--success); }
+
+  /* ---- result: activity slip (signature element) ---- */
+  .slip{
+    position: relative;
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 20px 18px 22px;
+    margin-top: 4px;
+    box-shadow: 0 10px 30px rgba(122,36,52,0.08);
+    border: 1px solid rgba(122,36,52,0.08);
+    animation: rise 0.35s ease;
+  }
+  @keyframes rise{
+    from{ opacity:0; transform: translateY(8px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+  .slip::before, .slip::after{
+    content:"";
+    position:absolute;
+    left: 0; right: 0;
+    height: 14px;
+    background:
+      radial-gradient(circle 7px at 12px 0, transparent 7px, var(--bg) 7.5px) top / 24px 14px repeat-x;
+  }
+  .slip::before{ top: -7px; }
+  .slip::after{ bottom: -7px; transform: rotate(180deg); }
+
+  .slip-title{
+    font-family: 'Noto Serif Thai', serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--maroon-dark);
+    margin: 0 0 4px;
+  }
+  .slip-sub{ font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+
+  .slip-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding: 9px 0;
+    border-bottom: 1px dashed #E4DCCF;
+    gap: 12px;
+  }
+  .slip-row:last-child{ border-bottom: none; }
+  .slip-row .k{ font-size: 13px; color: var(--muted); }
+  .slip-row .v{ font-size: 14px; font-weight: 700; color: var(--text); text-align:right; }
+
+  .linkline{
+    display:flex; align-items:center; gap:8px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .dot{ width:6px; height:6px; border-radius:50%; background: var(--success); }
+
+  .again{
+    display:inline-block;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--maroon);
+    text-decoration: underline;
+    cursor: pointer;
+    background: none; border: none; padding: 0; font-family: inherit;
+  }
+
+  .footnote{
+    text-align:center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 18px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="letterhead">
+    <div class="eyebrow">Chiang Mai Rajabhat University</div>
+    <h1>ลงทะเบียน Line</h1>
+    <div class="rule"></div>
+  </div>
+
+  <div class="card" id="card">
+    <div class="loading" id="loadingState">
+      <div class="spinner"></div>
+      <div id="loadingText">กำลังเชื่อมต่อ LINE...</div>
+    </div>
+  </div>
+
+  <div id="slipContainer"></div>
+
+  <div class="footnote">ข้อมูลของคุณใช้เพื่อเชื่อมโยงในรายวิชาเท่านั้น</div>
+</div>
+
+<script>
+/* ========================= ตั้งค่า ========================= */
+const LIFF_ID  = '2010923460-zDmm7ThA';                         // แก้เป็น LIFF ID จาก LINE Developers Console
+const GAS_URL  = 'https://script.google.com/macros/s/AKfycbwbEFIoXkDRxPqrWwj6lATi3VeKjJ--5emh2n1abCJnGRGNYwY7Z3HvGeEhUvt9Mtnu/exec';  // แก้เป็น URL ของ Web App ที่ deploy จาก Code.gs
+const EMAIL_DOMAIN = '@g.cmru.ac.th';
+/* ============================================================ */
+
+const cardEl = document.getElementById('card');
+let profile = null;
+
+function emailValid(v){
+  const re = new RegExp('^[a-zA-Z0-9._%+-]+' + EMAIL_DOMAIN.replace('.', '\\.') + '$', 'i');
+  return re.test(v.trim());
+}
+
+async function callGas(params, options){
+  options = options || {};
+  const url = new URL(GAS_URL);
+  if (options.method !== 'POST') {
+    Object.keys(params || {}).forEach(k => url.searchParams.set(k, params[k]));
+  }
+  const res = await fetch(url.toString(), {
+    method: options.method || 'GET',
+    headers: options.method === 'POST' ? { 'Content-Type': 'text/plain;charset=utf-8' } : undefined,
+    body: options.method === 'POST' ? JSON.stringify(params) : undefined,
+  });
+  if (!res.ok) throw new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ (' + res.status + ')');
+  return res.json();
+}
+
+function renderLoading(text){
+  cardEl.innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>${text}</div>
+    </div>`;
+}
+
+function renderForm(opts){
+  opts = opts || {};
+  cardEl.innerHTML = `
+    ${opts.banner ? `<div class="banner ${opts.banner.type}">${opts.banner.text}</div>` : ''}
+    <div class="profile">
+      <img src="${profile.pictureUrl || ''}" alt="">
+      <div class="who">
+        <div class="name">${profile.displayName}</div>
+        <div class="tag">เชื่อมต่อ LINE แล้ว</div>
+      </div>
+    </div>
+    <label for="emailInput">อีเมล Google Workspace (รหัสนักศึกษา)</label>
+    <input type="email" id="emailInput" placeholder="6512345678${EMAIL_DOMAIN}" value="${opts.email || ''}" />
+    <div class="field-error" id="emailError"></div>
+    <div class="hint">ใช้อีเมล ${EMAIL_DOMAIN} เท่านั้น ระบบจะใช้อีเมลนี้เชื่อมโยงผลกิจกรรมของคุณ</div>
+    <button class="submit" id="submitBtn">บันทึกและดูผลกิจกรรม</button>
+  `;
+
+  const input = document.getElementById('emailInput');
+  const btn = document.getElementById('submitBtn');
+  const errEl = document.getElementById('emailError');
+
+  btn.addEventListener('click', async () => {
+    const email = input.value.trim().toLowerCase();
+    if (!emailValid(email)) {
+      input.classList.add('invalid');
+      errEl.textContent = `กรุณากรอกอีเมลให้ถูกต้อง เช่น 6512345678${EMAIL_DOMAIN}`;
+      return;
+    }
+    input.classList.remove('invalid');
+    errEl.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'กำลังบันทึก...';
+
+    try {
+      const reg = await callGas({
+        action: 'register',
+        lineUserId: profile.userId,
+        displayName: profile.displayName,
+        email: email,
+      }, { method: 'POST' });
+
+      if (reg.status !== 'ok') {
+        throw new Error(reg.message || 'บันทึกข้อมูลไม่สำเร็จ');
+      }
+
+      await loadReport(email, { justRegistered: true });
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'บันทึกและดูผลกิจกรรม';
+      renderForm({ email, banner: { type: 'error', text: err.message } });
+    }
+  });
+}
+
+async function loadReport(email, opts){
+  opts = opts || {};
+  renderLoading('กำลังดึงผลกิจกรรมของคุณ...');
+  document.getElementById('slipContainer').innerHTML = '';
+
+  try {
+    const report = await callGas({ action: 'getReport', email });
+
+    if (report.status === 'ok') {
+      renderForm({
+        email,
+        banner: opts.justRegistered
+          ? { type: 'success', text: 'บันทึกข้อมูลเรียบร้อยแล้ว ผลกิจกรรมของคุณแสดงอยู่ด้านล่าง' }
+          : undefined,
+      });
+      renderSlip(email, report.data);
+    } else {
+      renderForm({
+        email,
+        banner: {
+          type: opts.justRegistered ? 'success' : 'error',
+          text: opts.justRegistered
+            ? 'บันทึกอีเมลเรียบร้อยแล้ว แต่ยังไม่พบข้อมูลกิจกรรมของอีเมลนี้ในระบบขณะนี้'
+            : (report.message || 'ยังไม่พบข้อมูลกิจกรรมของอีเมลนี้'),
+        },
+      });
+    }
+  } catch (err) {
+    renderForm({ email, banner: { type: 'error', text: err.message } });
+  }
+}
+
+function renderSlip(email, data){
+  const rows = Object.keys(data)
+    .filter(k => k.toLowerCase() !== 'email')
+    .map(k => `
+      <div class="slip-row">
+        <span class="k">${k}</span>
+        <span class="v">${data[k] === '' || data[k] === undefined || data[k] === null ? '-' : data[k]}</span>
+      </div>`).join('');
+
+  document.getElementById('slipContainer').innerHTML = `
+    <div class="slip">
+      <div class="slip-title">ผลกิจกรรมของคุณ</div>
+      <div class="slip-sub">${email}</div>
+      ${rows}
+      <div class="linkline"><span class="dot"></span> เชื่อมโยงกับ LINE ของคุณเรียบร้อยแล้ว</div>
+    </div>
+  `;
+}
+
+async function bootstrap(){
+  try {
+    renderLoading('กำลังเชื่อมต่อ LINE...');
+    await liff.init({ liffId: LIFF_ID });
+
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return; // liff.login() จะ redirect ออกจากหน้านี้
+    }
+
+    profile = await liff.getProfile();
+
+    // ถ้าเคยลงทะเบียนอีเมลไว้แล้ว ให้ดึงผลกิจกรรมมาแสดงเลย
+    const check = await callGas({ action: 'checkLineUser', lineUserId: profile.userId });
+    if (check.status === 'ok' && check.found && check.email) {
+      await loadReport(check.email, { justRegistered: false });
+    } else {
+      renderForm();
+    }
+  } catch (err) {
+    cardEl.innerHTML = `<div class="banner error">ไม่สามารถเริ่มระบบได้: ${err.message}</div>`;
+  }
+}
+
+bootstrap();
+</script>
+</body>
+</html>
